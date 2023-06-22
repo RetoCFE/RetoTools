@@ -1,0 +1,30 @@
+DECLARE @fecha_inicio date = '2023-03-24'
+DECLARE @fecha_fin date = '2023-03-24'
+
+--TABLA ECH_R18 DETALLADO (LLAMADA x LLAMADA)
+SELECT * ---CONVERT(date,DateTime) [DateTime],
+    ----COUNT(*) [acdcalls ECH_R18] 
+	--into cust_report.dbo.[ECH_24-03-2023]
+	FROM cms_ECH_R18 WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin 
+		--AND CALL_DISP = 2
+		---group by CONVERT(date,DateTime)
+		--order by DateTime asc;
+
+select COUNT(*) from cms_ECH_R18 with(nolock) where convert(date,DateTime) = '2023-03-22' and CALL_DISP = 2
+select COUNT(*) from cust_report.dbo.[ECH_24-03-2023]  
+
+select * from cms_ECH_R18 with(nolock) where convert(date,DateTime) = '2023-03-24' and CALL_DISP = 2
+
+
+-- from cms_ECH_R18  where convert(date,DateTime) = '2023-03-24' and convert(date,DbDateTime) != '2023-03-30'
+--group by convert(date,DbDateTime)
+
+select COUNT(*),CALL_DISP from cust_report.dbo.[ECH_24-03-2023] group by CALL_DISP
+
+select * from cust_report.dbo.[ECH_24-03-2023] order by DateTime 
+select COUNT(*) from cust_report.dbo.[ECH_24-03-2023]  
+
+
+--select * FROM cms_ECH_R18 WITH(NOLOCK) where DateTime >= '2023-03-30 00:00:00' and filename = 'chr20230324121113'

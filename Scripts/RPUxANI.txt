@@ -1,0 +1,24 @@
+--Correr query en instancia 10.226.0.187 
+--Query que te da e total de registros por numero o rp
+--Total con duplicados
+USE cust_report
+--Total con duplicados
+SELECT count(*) as TOTALDUPLICADOS FROM [cust_report].[dbo].[TB_RPU] with(nolock)
+--Desglozado 
+SELECT * FROM [cust_report].[dbo].[TB_RPU]
+--//////////////TOTAL DE REGISTROS no DUPLICADOS/////////////////
+SELECT COUNT(*) as TotalSINDuplicados
+FROM (
+  SELECT ANI, RPU, MIN(Alias) AS Alias
+  FROM [cust_report].[dbo].[TB_RPU] with(nolock)
+  GROUP BY ANI, RPU
+) as subconsulta;
+--///////////////////////DESGLOZADO TOTAL///////////////////////////
+SELECT   COUNT(*)as NumRegistros,ANI, RPU, MIN(Alias) AS Alias
+FROM [cust_report].[dbo].[TB_RPU] with(nolock)
+GROUP BY ANI, RPU
+order by NumRegistros Desc
+--////////////////Busqueda de registro por RPU o ANI////////////////
+SELECT * FROM [cust_report].[dbo].[TB_RPU] with(nolock)
+where RPU='150220302476' OR ANI='5519504704'
+

@@ -1,0 +1,160 @@
+USE [aceyus_cms]
+GO
+-- PASO 1 CAMBIAR LAS FECHAS DEPENDIENDO DEL RANGO A CONSULTAR
+  DECLARE @StartDate DateTime = '2023-04-01 00:00:00'
+  DECLARE @EndDate DateTime = '2023-04-27 23:59:59'
+
+DECLARE @VERANO		  INT = 5,
+		@VERANO_FIN   INT = 4,
+		@INVERNO	  INT = 6,
+		@INVIERNO_FIN INT = 5,
+		@ACTUAL		  INT = 0,
+		@ACTUAL_FIN   INT = 0
+
+	 IF @StartDate <= '2022-10-29 00:00:00' BEGIN SET @ACTUAL = @VERANO  END
+ELSE IF @StartDate >= '2022-10-30 00:00:00' BEGIN SET @ACTUAL = @INVERNO END
+
+	 IF @ACTUAL = @VERANO  BEGIN SET @ACTUAL_FIN = @VERANO_FIN   END
+ELSE IF @ACTUAL = @INVERNO BEGIN SET @ACTUAL_FIN = @INVIERNO_FIN END
+
+
+SELECT *
+INTO #movimientos
+FROM [GRDB-LISTENER.CFE.MX].[DBANIVSRPU].[dbo].[TB_MOVIVRCFE] WITH(NOLOCK)
+WHERE FECHA BETWEEN DATEADD(HOUR,-1,@StartDate) 
+				AND DATEADD(HOUR, 1,@EndDate)
+
+
+SELECT
+	CallTimestamp,
+	SessionID,
+	Duration,
+	ApplicationName,
+	EndDetails  
+INTO #cdr 
+FROM [EPDB-LISTENER].[VoicePortal].[dbo].[CDR] WITH(NOLOCK)
+WHERE 
+	ApplicationName IN ('DSS-Flow-CDMX','DSS-Flow-MTY','Hotline','RetornoMenu')
+AND CallTimestamp BETWEEN DATEADD(HOUR,@ACTUAL,@StartDate) 
+					  AND DATEADD(SECOND,59,DATEADD(MINUTE,59,DATEADD(HOUR,@ACTUAL_FIN,@EndDate))) --POR ALGUN MOTIVO SINO LO PONES ASÍ EN EL AND DEL BETWEEN
+																								   --TE TOMA LA HORA 00 DEL DIA SIGUIENTE 16/01/2023
+AND (SessionID COLLATE Latin1_General_CI_AI NOT IN (SELECT [SESSIONID] FROM [cust_report].[dbo].[TB_SESSIONDUPLICADAS])) --EXCLUSIÓN DE LLAMADAS DUPLICADAS SOLICITADO POR ENRIQUE 30/01/2023
+
+
+SELECT 
+	CONVERT(date,(DATEADD(HOUR,-6,CallTimestamp))) AS DIA,
+	b.FECHA  [FECHA_Banderas],
+	DATEADD(HOUR,-6,CallTimestamp) [CallTimestamp_IVR],
+	a.EndDetails                   [TERMINACION_IVR],
+	TERMINACION = 
+	 CASE
+		WHEN ApplicationName = 'HotLine' 
+			AND EndDetails NOT LIKE '%Transferred%'									       THEN 'ABANDONADAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails LIKE '%Transferred%'										       THEN 'TRANSFERIDAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (TRANSFERENCIA IS NULL AND AUTOATENDIDA IS NULL AND Duration <= 10)		   THEN 'AUTOATENDIDAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'  
+			AND (TRANSFERENCIA IS NULL AND AUTOATENDIDA IS NOT NULL)					   THEN 'AUTOATENDIDAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (TRANSFERENCIA IS NULL AND AUTOATENDIDA IS NULL AND Duration > 10)	       THEN 'ABANDONADAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (TRANSFERENCIA IS NULL AND AUTOATENDIDA IS NOT NULL AND Duration > 10)	   THEN 'AUTOATENDIDAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (TRANSFERENCIA IS NOT NULL AND AUTOATENDIDA IS NOT NULL AND Duration > 10) THEN 'AUTOATENDIDAS' 
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (AUTOATENDIDA IS NULL AND Duration > 10)								   THEN 'ABANDONADAS'
+		WHEN ApplicationName IN ('HotLine','DSS-Flow-MTY','DSS-Flow-CDMX','RetornoMenu') 
+			AND EndDetails NOT LIKE  '%Transferred%'
+			AND (AUTOATENDIDA IS NULL AND Duration <= 10)								   THEN 'AUTOATENDIDAS'
+	 ELSE '' END,
+	ANI, MOVIMIENTO1, MOVIMIENTO2, MOVIMIENTO3, MOVIMIENTO4, MOVIMIENTO5, MOVIMIENTO6, MOVIMIENTO7, MOVIMIENTO8, MOVIMIENTO9, MOVIMIENTO10,
+	MOVIMIENTO11, MOVIMIENTO12, MOVIMIENTO13, MOVIMIENTO14, MOVIMIENTO15, MOVIMIENTO16, MOVIMIENTO17, MOVIMIENTO18, MOVIMIENTO19, MOVIMIENTO20,
+	TRANSFERENCIA, AUTOATENDIDA, ULTIMOPASO, RPU, Duration
+INTO #tempIVR
+FROM #cdr a
+  LEFT JOIN #movimientos b ON a.SessionID COLLATE Latin1_General_CI_AI = b.SESSIONID
+ 
+SELECT
+   DIA,
+   COUNT(*) [ABANDONADAS IVR TOTALES]
+INTO #tempAbanTls
+FROM #tempIVR
+WHERE
+   TERMINACION = 'ABANDONADAS'
+GROUP BY
+   DIA
+
+---
+SELECT 
+   DIA,
+   COUNT(*) [ABANDONADAS CON FILTROS >10 MP 3ERPASO]
+INTO #tempMenuPrin
+FROM #tempIVR
+WHERE
+   (ULTIMOPASO = '2.MenuPrincipal' OR ULTIMOPASO = 'MenuPrincipal')
+AND
+   MOVIMIENTO3 IS NULL
+AND 
+   TERMINACION = 'ABANDONADAS'
+GROUP BY
+   DIA
+
+   ------
+
+   --PASO 2 OBTENEMOS LOS TOTALES 
+ --/////////////////////Seleccionamso el total de abandonos//////////////////////
+SELECT 
+   SUM(a.[ABANDONADAS IVR TOTALES])                        [ABANDONADAS IVR TOTALES],
+   SUM(b.[ABANDONADAS CON FILTROS >10 MP 3ERPASO]) [ABANDONADAS CON FILTROS >10 MP 3ERPASO],
+   CAST((SUM(b.[ABANDONADAS CON FILTROS >10 MP 3ERPASO])/SUM(a.[ABANDONADAS IVR TOTALES])*100)AS DECIMAL) as 'Porcentaje'
+FROM #tempAbanTls a
+   LEFT JOIN #tempMenuPrin b ON a.DIA = b.DIA
+----////////////////////////Seleccionamos el total de llamadas por terminacion
+SELECT 
+   SUM(a.[ABANDONADAS IVR TOTALES]) [ABANDONADAS IVR TOTALES],
+   SUM(b.[ABANDONADAS CON FILTROS >10 MP 3ERPASO]) [ABANDONADAS CON FILTROS >10 MP 3ERPASO],
+   CAST(SUM(b.[ABANDONADAS CON FILTROS >10 MP 3ERPASO]) * 100.0 / SUM(a.[ABANDONADAS IVR TOTALES]) AS DECIMAL(10,2)) [Porcentaje]
+FROM #tempAbanTls a
+LEFT JOIN #tempMenuPrin b ON a.DIA = b.DIA;
+--ORDER BY TERMINACION;
+
+
+
+----/////////////////////Seleccionamos la tabla total de abandono
+----PASO 3 OBTENER REPORTE COMPLETO  
+--/* Ejecutar solo esta linea para poder extraer reporte completo despues guardar resultados como un archivo csv*/
+SELECT Count(*) as 'Total abandonadas'  FROM #tempIVR WHERE TERMINACION = 'ABANDONADAS'
+---------------------------------------------------------------
+--			Sacar por dia y paso abandonadas
+---------------------------------------------------------------
+SELECT  DIA,  [ULTIMOPASO], SUM(TOTAL) AS TOTAL FROM ( SELECT  DIA, [ULTIMOPASO], COUNT([ULTIMOPASO]) AS TOTAL FROM #tempIVR WHERE TERMINACION = 'ABANDONADAS'  AND [ULTIMOPASO] is not null GROUP BY DIA, [ULTIMOPASO]) subquery GROUP BY DIA, [ULTIMOPASO] order by DIA
+---------------------------------------------------------------
+--					Sacar por mes y pasos
+---------------------------------------------------------------
+SELECT 
+   [ULTIMOPASO], 
+   SUM(TOTAL) AS TOTAL, 
+   CONCAT(CAST((SUM(TOTAL) * 100.0 / (SELECT SUM(TOTAL) FROM (SELECT COUNT(*) AS TOTAL FROM #tempIVR WHERE TERMINACION = 'ABANDONADAS' AND [ULTIMOPASO] IS NOT NULL GROUP BY [ULTIMOPASO]) subquery2)) AS DECIMAL(10,4)), '%') AS Porcentaje 
+FROM (
+   SELECT 
+      [ULTIMOPASO], 
+      COUNT([ULTIMOPASO]) AS TOTAL 
+   FROM #tempIVR 
+   WHERE TERMINACION = 'ABANDONADAS' AND [ULTIMOPASO] IS NOT NULL 
+   GROUP BY [ULTIMOPASO]
+) subquery 
+GROUP BY [ULTIMOPASO] 
+ORDER BY [ULTIMOPASO]
+
+
+
+
+
+DROP TABLE #cdr,#movimientos,#tempIVR,#tempAbanTls,#tempMenuPrin

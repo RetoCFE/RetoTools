@@ -1,0 +1,120 @@
+Scripts Dashboard Nacional:
+
+Fecha:
+		SELECT UPPER(substring(FORMAT(GETDATE(),'dddd dd ''de'' MMMM yyyy','Es-es'),1,1)) 
+		  + substring(FORMAT(GETDATE(),'dddd dd ''de'' MMMM yyyy','Es-es'),2,100)
+  
+Total Recibidas:
+		select count(*)		
+		from [EPDB-LISTENER].[VoicePortal].[dbo].[CDR] a with(nolock)
+		where [CallTimestamp] between   dateadd(hour,6,convert(datetime,convert(date,getdate())))
+		and   dateadd(hour,6,convert(datetime,convert(date,getdate()+1)))
+		and ApplicationName in ('DSS-Flow-CDMX','DSS-Flow-MTY','Hotline')	
+Transferidas a ACD:
+		select count(*) from [EPDB-LISTENER].[VoicePortal].[dbo].[CDR] a with(nolock)
+		where [CallTimestamp] between   dateadd(hour,6,convert(datetime,convert(date,getdate())))
+		and   dateadd(hour,6,convert(datetime,convert(date,getdate()+1)))
+		and ApplicationName in ('DSS-Flow-CDMX','DSS-Flow-MTY','Hotline')
+		and EndDetails like 'Trans%'
+Atendidas IVR:
+		SELECT SESSIONID, AUTOATENDIDA INTO #TEMP FROM [GRDB-LISTENER.CFE.MX].[DBANIVSRPU].[dbo].[TB_MOVIVRCFE] b with (nolock)
+		where CONVERT(DATE,FECHA) >= CONVERT(DATE,GETDATE()-1)
+			  
+			  SELECT  COUNT(*)
+		  FROM (
+				select *	
+		from [EPDB-LISTENER].[VoicePortal].[dbo].[CDR]  a with (nolock) 
+		where [CallTimestamp] between   dateadd(hour,6,convert(datetime,convert(date,getdate())))
+		and   dateadd(hour,6,convert(datetime,convert(date,getdate()+1)))
+		and ApplicationName in ('DSS-Flow-CDMX','DSS-Flow-MTY','Hotline')	
+		and [EndDetails] Not like 'Trans%' 
+				) a
+		  left join  #TEMP b with (nolock)
+		  on a.SessionID = b.SESSIONID COLLATE SQL_Latin1_General_CP1_CI_AI
+				  WHERE  AUTOATENDIDA IS  not  NULL 
+				  or   [Duration]  <=  10 
+		DROP TABLE #TEMP
+		
+Abandonadas IVR:
+		SELECT SESSIONID, AUTOATENDIDA INTO #TEMP FROM [GRDB-LISTENER.CFE.MX].[DBANIVSRPU].[dbo].[TB_MOVIVRCFE] b with (nolock)
+		where CONVERT(DATE,FECHA) >= CONVERT(DATE,GETDATE()-1)
+			  
+			  SELECT  COUNT(*)
+		  FROM (
+				select *	
+		from [EPDB-LISTENER].[VoicePortal].[dbo].[CDR]  a with (nolock) 
+		where [CallTimestamp] between   dateadd(hour,6,convert(datetime,convert(date,getdate())))
+		and   dateadd(hour,6,convert(datetime,convert(date,getdate()+1)))
+		and ApplicationName in ('DSS-Flow-CDMX','DSS-Flow-MTY','Hotline')	
+		and [EndDetails] Not like 'Trans%' and   [Duration] > 10 
+				) a
+		  left join  #TEMP b with (nolock)
+		  on a.SessionID = b.SESSIONID COLLATE SQL_Latin1_General_CP1_CI_AI
+				  WHERE  AUTOATENDIDA IS  NULL 
+		DROP TABLE #TEMP
+Agentes Disponibles:
+SELECT Avail AS 'AGENTESDISPONIBLES'
+  FROM [aceyus_cms].[dbo].[CMS1_ACD1_Skills_RT]
+  where Skill = 1
+Agentes Outs
+SELECT SUM(Staffed ) 
+  FROM [aceyus_cms].[dbo].[CMS1_ACD1_Skills_RT] with (nolock) 
+  where Skill in ( 14,15,16,17,24)
+Total de Agentes Conectados
+SELECT SUM(Staffed ) 
+  FROM [aceyus_cms].[dbo].[CMS1_ACD1_Skills_RT] with (nolock) 
+  where Skill in ( 1,14,15,16,17,24)
+Nivel de Servicio:
+SELECT dbo.ToAvg(100*SUM(ISNULL(SRT.[AcceptableToday],0)),SUM(ISNULL(SRT.[CallsOfferedToday],0)),2)
+  FROM [aceyus_cms].[dbo].[cms_Skills_RT_Integrated] SRT with(nolock)
+ILLA:
+	SELECT  convert(varchar(10),round(SUM(CONVERT(float,(acdcalls))) * 100
+	/
+	(SUM(CONVERT(float,(acdcalls))) + (SELECT SUM(CONVERT(float,(abncalls))) FROM [aceyus_cms].[dbo].[cms_hvdn] WHERE vdn IN 
+	(SELECT [VDN] FROM [cust_report].[dbo].[VDN_Report]) and convert(date,DateTime) = convert(date,getdate()) ))
+	,2) ) + '%' as 'pilla'
+	FROM aceyus_cms.dbo.cms_hsplit
+	WHERE split IN (SELECT [Skill] FROM [cust_report].[dbo].[Skill_Report]) 
+	AND CONVERT(date,DateTime) = CONVERT(date,GETDATE())
+	
+ILLa Chart
+[cust_report].[dbo].[Dash_ILLA_Chart]
+
+Datos Telegram:
+ SELECT sum(new_cases) 'Casos_nuevos'
+  FROM [SMDB-LISTENER.CFE.MX].[yFlowDB].[dbo].[history_daily_by_flow] a with(nolock)
+  join [SMDB-LISTENER.CFE.MX].[yFlowDB].[dbo].flows b with(nolock)
+  on a.flow_id = b.[id]
+  where convert(date,getdate()) = convert(date,dateadd(hour,-6,date)) 
+    AND b.name = 'Flow Telegram'
+  group by [name]
+
+
+Datos Twitter:
+  SELECT sum(new_cases) 'Casos_nuevos'
+  FROM [SMDB-LISTENER.CFE.MX].[yFlowDB].[dbo].[history_daily_by_flow] a with(nolock)
+  join [SMDB-LISTENER.CFE.MX].[yFlowDB].[dbo].flows b with(nolock)
+  on a.flow_id = b.[id]
+  where convert(date,getdate()) = convert(date,dateadd(hour,-6,date)) 
+  AND b.name = 'Flow Twitter'
+  group by [name]
+
+Abandonadas ACD:
+	SELECT sum(abncalls)
+	  FROM [aceyus_cms].[dbo].[cms_hvdn]
+	   where [DateTime] >= convert(date,getdate())
+	   and vdn in ('820000','820008','820016','820023','820039','820048','820049','820050','820056','820057','820059')
+ Transferidas a encuesta:
+	  SELECT   
+	COUNT(*)
+	FROM aceyus_cms.dbo.cms_Agent A WITH (NOLOCK) 
+	JOIN aceyus_cms.dbo.cms_ECH_R18 ECH WITH (NOLOCK)
+	ON SUBSTRING(CAST(ECH.ANSLOGIN AS varchar),4,7)  = A.AgentID
+	where 
+	Substring(CAST(A.AgentID as varchar(10)),1,3) in ('701','702','703','704','705','706','707','708','709','710','711','712','713','714')
+	AND A.AgentID   NOT IN (SELECT [LOGINID] FROM [cust_report].[dbo].[RRSS_AGENT])    
+	AND ECH.AGT_RELEASED = 1 
+	AND
+	CONVERT(DATE,ECH.DateTime) = convert(date,getdate())
+	and ECH.CALL_DISP = 2
+

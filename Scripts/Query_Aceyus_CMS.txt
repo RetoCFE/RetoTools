@@ -1,0 +1,86 @@
+Aceyus
+------
+DECLARE @fecha date = '2023-03-22'
+
+SELECT SUM(acdcalls)	[acdcalls hagent],
+	   SUM(da_abncalls) [da_abncalls hagent]
+	FROM cms_hagent WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) = @fecha;
+
+SELECT SUM(acdcalls)	[acdcalls dagent],
+	   SUM(da_abncalls) [da_abncalls dagent]
+	FROM cms_dagent 
+		WHERE DateTime = @fecha; 
+
+SELECT SUM(incalls)  [incalls hvdn],
+	   SUM(acdcalls) [acdcalls hvdn],
+	   SUM(abncalls) [abncalls hvdn]
+	FROM cms_hvdn WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) = @fecha
+		AND vdn IN (SELECT VDN FROM cust_report.dbo.VDN_Report);
+
+SELECT SUM(incalls)  [incalls dvdn],
+	   SUM(acdcalls) [acdcalls dvdn],
+	   SUM(abncalls) [abncalls dvdn]
+	FROM cms_dvdn 
+		WHERE DateTime = @fecha
+		AND vdn IN (SELECT VDN FROM cust_report.dbo.VDN_Report);
+
+SELECT SUM(acdcalls) [acdcalls hsplit],
+	   SUM(abncalls) [abncalls hsplit] 
+	FROM cms_hsplit WITH(NOLOCK)
+		WHERE CONVERT(date,DateTime) = @fecha
+		AND split IN (SELECT Skill FROM cust_report.dbo.Skill_Report);
+
+SELECT SUM(acdcalls) [acdcalls dsplit],
+	   SUM(abncalls) [abncalls dsplit]
+	FROM cms_dsplit 
+		WHERE CONVERT(date,DateTime) = @fecha
+		AND split in (SELECT Skill FROM cust_report.dbo.Skill_Report);
+
+SELECT COUNT(*) [acdcalls ECH_R18] 
+	FROM cms_ECH_R18 WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) = @fecha 
+		AND CALL_DISP = 2; 
+CMS
+---
+SELECT * FROM OPENQUERY (CMS1_HA,
+	'SELECT SUM(acdcalls)    acdcalls_hagent,
+			SUM(da_abncalls) da_abncalls_hagent 
+	   FROM hagent 
+		WHERE row_date = ''3/22/2023''')
+
+SELECT * FROM OPENQUERY (CMS1_HA,
+	'SELECT SUM(acdcalls)    acdcalls_dagent,
+			SUM(da_abncalls) da_abncalls_dagent 
+	   FROM dagent 
+		WHERE row_date = ''3/22/2023''')
+
+SELECT * FROM OPENQUERY (CMS1_HA,
+	'SELECT SUM(incalls) incalls_hvdn,
+			SUM(acdcalls) acdcalls_hvdn,
+			SUM(abncalls) abncalls_hvdn 
+	   FROM hvdn 
+		 WHERE row_date = ''3/22/2023''
+		 AND vdn IN (''820000'',''820008'',''820016'',''820023'',''820039'',''820048'',''820049'',''820050'',''820056'',''820057'',''820031'',''820060'',''820061'',''820062'')')
+
+SELECT * FROM OPENQUERY (CMS1_HA,
+	'SELECT SUM(incalls)  incalls_dvdn,
+			SUM(acdcalls) acdcalls_dvdn,
+			SUM(abncalls) abncalls_dvdn 
+	   FROM dvdn 
+		WHERE row_date = ''3/22/2023''
+		AND vdn IN (''820000'',''820008'',''820016'',''820023'',''820039'',''820048'',''820049'',''820050'',''820056'',''820057'',''820031'',''820060'',''820061'',''820062'')')
+
+SELECT * FROM OPENQUERY (CMS1_HA,
+	'SELECT SUM(acdcalls) acdcalls_hsplit,
+			SUM(abncalls) abncalls_hsplit 
+	   FROM hsplit WHERE row_date = ''3/22/2023''
+	   AND split IN (''1'',''2'',''4'',''5'',''7'',''19'',''20'',''21'',''22'',''23'',''31'',''60'',''61'',''62'')')
+
+SELECT * FROM OPENQUERY (CMS1_HA,
+'SELECT SUM(acdcalls) acdcalls_dsplit,
+		SUM(abncalls) abncalls_dsplit 
+   FROM dsplit 
+	WHERE row_date = ''3/22/2023''
+	AND split IN (''1'',''2'',''4'',''5'',''7'',''19'',''20'',''21'',''22'',''23'',''31'',''60'',''61'',''62'')')

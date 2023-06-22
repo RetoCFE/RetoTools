@@ -1,0 +1,82 @@
+DECLARE @fecha_inicio date = '2023-03-22'
+DECLARE @fecha_fin date = '2023-03-22'
+
+--TABLA AGENT INTERVALO H
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(acdcalls)	[acdcalls hagent],
+	   SUM(da_abncalls) [da_abncalls hagent]
+	FROM cms_hagent WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		group by CONVERT(date,DateTime)
+		--order by DateTime ASC;
+
+--TABLA AGENT DIARIA D
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(acdcalls)	[acdcalls dagent],
+	   SUM(da_abncalls) [da_abncalls dagent]
+	FROM cms_dagent 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		group by CONVERT(date,DateTime)
+		order by DateTime; 
+
+--TABLA VDN INTERVALO H
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(incalls)  [incalls hvdn],
+	   SUM(acdcalls) [acdcalls hvdn],
+	   SUM(abncalls) [abncalls hvdn]
+	FROM cms_hvdn WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		AND vdn IN (SELECT VDN FROM cust_report.dbo.VDN_Report)
+		group by CONVERT(date,DateTime)
+		order by DateTime;
+
+--TABLA VDN DIARIA D
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(incalls)  [incalls dvdn],
+	   SUM(acdcalls) [acdcalls dvdn],
+	   SUM(abncalls) [abncalls dvdn]
+	FROM cms_dvdn 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		AND vdn IN (SELECT VDN FROM cust_report.dbo.VDN_Report)
+		group by CONVERT(date,DateTime)
+		order by DateTime;
+
+--TABLA SPLIT INTERVALO H
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(acdcalls) [acdcalls hsplit],
+	   SUM(abncalls) [abncalls hsplit] 
+	FROM cms_hsplit WITH(NOLOCK)
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		AND split IN (SELECT Skill FROM cust_report.dbo.Skill_Report)
+		group by CONVERT(date,DateTime)
+		order by DateTime;
+
+
+--TABLA SPLIT DIARIA D
+SELECT CONVERT(date,DateTime) [DateTime],
+       SUM(acdcalls) [acdcalls dsplit],
+	   SUM(abncalls) [abncalls dsplit]
+	FROM cms_dsplit 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin
+		AND split in (SELECT Skill FROM cust_report.dbo.Skill_Report)
+		group by CONVERT(date,DateTime)
+		order by DateTime;
+
+DECLARE @fecha_inicio date = '2023-03-22'
+DECLARE @fecha_fin date = '2023-03-22'
+
+--TABLA ECH_R18 DETALLADO (LLAMADA x LLAMADA)
+SELECT * ---CONVERT(date,DateTime) [DateTime],
+    ----COUNT(*) [acdcalls ECH_R18] 
+	FROM cms_ECH_R18 WITH(NOLOCK) 
+		WHERE CONVERT(date,DateTime) >= @fecha_inicio
+		AND CONVERT(date,DateTime) <= @fecha_fin 
+		AND CALL_DISP = 2
+		---group by CONVERT(date,DateTime)
+		--order by DateTime asc; 

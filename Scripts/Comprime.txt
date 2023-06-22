@@ -1,0 +1,15 @@
+@echo off
+set "src_dir=C:\Users\Luis Canchola\Desktop\Survey"
+set "dest_dir=C:\Users\Luis Canchola\Desktop\SurveyBackup"
+
+REM Get yesterday's date in the format used in the filenames (YYYY-MM-DD)
+for /F "tokens=1-3 delims=/" %%d in ("%date%") do set "yesterday=%%f-%%e-%%d"
+
+REM Move all files in the source directory with a modification date older than yesterday
+for %%f in ("%src_dir%\*.txt") do (
+  for /F "tokens=1-2 delims=_" %%a in ("%%~nf") do (
+    if "%%a" LSS "%yesterday%" (
+      move "%%f" "%dest_dir%"
+    )
+  )
+)

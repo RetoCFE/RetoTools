@@ -1,0 +1,34 @@
+/******************************************
+
+	Validamos el numero de adaptador seteado enla Base  bpwarehousedb
+
+*******************************************/
+select * from [bpwarehousedb].[dbo].advisorconfig where paramname= 'whsynch/counter'
+/******************************************
+
+	De acuerdo al numero debe de coincidir con el PARAMVALUE de la DBbpconfig
+
+*******************************************/
+
+  select * from bpconfig where name = 'whsynch/counter'
+
+/******************************************
+
+	Actualizamos el valor con el que se tiene en la otra base
+
+*******************************************/
+ --update bpconfig set VALUE = '629' where name = 'whsynch/counter'
+
+/******************************************
+
+	Query que hace todo el proceso automatico
+
+*******************************************/
+  update bpconfig set VALUE = (select PARAMVALUE from [bpwarehousedb].[dbo].advisorconfig where paramname= 'whsynch/counter')
+  where name = 'whsynch/counter'
+/******************************************
+
+Rollback
+
+*******************************************/
+  --update bpconfig set VALUE = '628' where name = 'whsynch/counter'
