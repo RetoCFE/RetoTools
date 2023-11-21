@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<module category="" descriptorversion="1.0" entrypoint="CFE_ABANDERAMIENTO/Start" forcesubdialogcall="false" frameworkversion="08.10.06.01" iconlarge="icons/defaultapplicationlg.gif" iconsmall="icons/defaultapplicationsm.gif" modifyInputs="false" modifyOutputs="false" nature="com.avaya.sce.core.speechnature" outputmultipart="false" paramasnamelist="false" provider="" submitmethod="get" version="1.0.0" webname="CFE_ABANDERAMIENTO">
+    <description/>
+    <input defaultvalue="" description="EVA_TELEFONO" name="EVA_TELEFONO" varreftypesimple="true"/>
+    <input defaultvalue="" description="DNIS" name="EVA_DNIS" varreftypesimple="true"/>
+    <input defaultvalue="" description="UCID" name="EVA_UCID" varreftypesimple="true"/>
+    <input defaultvalue="" description="PASO" name="EVA_PASO" varreftypesimple="true"/>
+    <input defaultvalue="" description="SESSIONID" name="EVA_SESSIONID" varreftypesimple="true"/>
+    <input defaultvalue="" description="AUTOATENDIDA" name="EVA_AUTOATENDIDA" varreftypesimple="true"/>
+    <input defaultvalue="" description="TRASNFERENCIA" name="EVA_TRANSFERENCIA" varreftypesimple="true"/>
+    <input defaultvalue="" description="RPU" name="EVA_RPU" varreftypesimple="true"/>
+    <language name="english" root="en-us"/>
+    <dependencies/>
+</module>

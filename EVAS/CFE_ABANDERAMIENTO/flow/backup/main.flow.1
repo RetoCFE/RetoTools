@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<AppFlowDoc>
+    <ApplicationFlow nextObjectId="19" package="flow" version="5.0">
+        <FlowGraph>
+            <FlowNode class="com.avaya.sce.callflow.internal.appflow.AppRoot" id="1" version="3.1">
+                <Property name="Name" value="AppRoot"/>
+                <FlowItem class="com.avaya.sce.callflow.internal.flowitem.AppRoot" id="2" version="1.2">
+                    <ItemProperties>
+                        <Property name="StartNodeID" value="5"/>
+                    </ItemProperties>
+                    <ChildItems>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="11" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="EVA_TELEFONO"/>
+                                <Property name="Name" value="EVA_TELEFONO"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="12" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="DNIS"/>
+                                <Property name="Name" value="EVA_DNIS"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="13" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="UCID"/>
+                                <Property name="Name" value="EVA_UCID"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="15" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="PASO"/>
+                                <Property name="Name" value="EVA_PASO"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="16" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="SESSIONID"/>
+                                <Property name="Name" value="EVA_SESSIONID"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="17" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="AUTOATENDIDA"/>
+                                <Property name="Name" value="EVA_AUTOATENDIDA"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="18" version="1.2">
+                            <ItemProperties>
+                                <Property name="Description" value="TRASNFERENCIA"/>
+                                <Property name="Name" value="EVA_TRANSFERENCIA"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.InputParameter" id="19" version="1.2">
+                            <ItemProperties>
+                                <Property name="Name" value="EVA_RPU"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                    </ChildItems>
+                </FlowItem>
+            </FlowNode>
+            <FlowNode class="com.avaya.sce.callflow.internal.appflow.Return" id="3" version="3.1">
+                <Property name="FlowNodeEditPart.WidgetX" value="404"/>
+                <Property name="FlowNodeEditPart.WidgetY" value="190"/>
+                <Property name="Name" value="Salida"/>
+            </FlowNode>
+            <FlowNode class="com.avaya.sce.callflow.internal.appflow.Servlet" id="5" version="3.1">
+                <Property name="FlowNodeEditPart.WidgetX" value="227"/>
+                <Property name="FlowNodeEditPart.WidgetY" value="77"/>
+                <Property name="Name" value="Java"/>
+                <FlowItem class="com.avaya.sce.callflow.internal.flowitem.Servlet" id="6" version="1.2">
+                    <ItemProperties/>
+                    <ChildItems>
+                        <FlowItem class="com.avaya.sce.callflow.internal.flowitem.GoTo" id="7" version="1.2">
+                            <ItemProperties>
+                                <Property name="LinkedNodeID" value="3"/>
+                                <Property name="Name" value="Default"/>
+                            </ItemProperties>
+                            <ChildItems/>
+                        </FlowItem>
+                    </ChildItems>
+                </FlowItem>
+            </FlowNode>
+            <NodeConnection id="8" version="1.2">
+                <SourceNode id="1"/>
+                <TargetNode id="5"/>
+                <Property name="Connection.SourceObjectID" value="2"/>
+                <Property name="Connection.TargetObjectID" value="5"/>
+            </NodeConnection>
+            <NodeConnection id="9" version="1.2">
+                <SourceNode id="5"/>
+                <TargetNode id="3"/>
+                <Property name="Connection.SourceObjectID" value="7"/>
+                <Property name="Connection.TargetObjectID" value="3"/>
+            </NodeConnection>
+        </FlowGraph>
+        <ProjectEventTypes/>
+    </ApplicationFlow>
+</AppFlowDoc>
